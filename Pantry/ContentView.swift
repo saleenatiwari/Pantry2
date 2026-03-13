@@ -15,7 +15,7 @@ struct ContentView: View {
             
             ChefView()
                 .tabItem {
-                    Label("Chef", systemImage: "fork.knife")
+                    Label("Chef", systemImage: "frying.pan")
                 }
         }
     }

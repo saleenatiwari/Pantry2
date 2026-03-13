@@ -194,25 +194,60 @@ struct SectionDetailView: View {
 // MARK: - Food Item Row
 struct FoodItemRow: View {
     let item: FoodItem
+    @Environment(\.modelContext) private var modelContext
 
     var urgencyColor: Color {
         switch item.urgency {
         case .fresh: return .green
-        case .soon: return .yellow
+        case .soon: return Color.orange.opacity(0.8)
         case .critical: return .orange
         case .expired: return .red
         }
     }
 
-    var body: some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(urgencyColor)
-                .frame(width: 6)
+    var badgeText: String {
+        if item.isExpired { return "Expired" }
+        if item.daysUntilExpiry == 0 { return "Today!" }
+        if item.daysUntilExpiry == 1 { return "Tomorrow" }
+        return "in \(item.daysUntilExpiry)d"
+    }
 
-            VStack(alignment: .leading, spacing: 4) {
+    var categoryEmoji: String {
+        let name = item.name.lowercased()
+        if name.contains("milk") || name.contains("yogurt") || name.contains("cheese") || name.contains("mozzarella") { return "🧀" }
+        if name.contains("chicken") || name.contains("beef") || name.contains("pork") || name.contains("meat") { return "🥩" }
+        if name.contains("fish") || name.contains("salmon") || name.contains("tuna") { return "🐟" }
+        if name.contains("apple") { return "🍎" }
+        if name.contains("banana") { return "🍌" }
+        if name.contains("berry") || name.contains("strawberry") { return "🍓" }
+        if name.contains("bread") || name.contains("bagel") || name.contains("toast") { return "🍞" }
+        if name.contains("egg") { return "🥚" }
+        if name.contains("juice") { return "🧃" }
+        if name.contains("water") { return "💧" }
+        if name.contains("pasta") || name.contains("noodle") { return "🍝" }
+        if name.contains("rice") { return "🍚" }
+        if name.contains("soup") { return "🍲" }
+        if name.contains("salad") || name.contains("lettuce") || name.contains("spinach") { return "🥗" }
+        if name.contains("carrot") { return "🥕" }
+        if name.contains("tomato") { return "🍅" }
+        if name.contains("butter") || name.contains("cream") { return "🧈" }
+        if name.contains("chocolate") || name.contains("candy") { return "🍫" }
+        if name.contains("coffee") { return "☕️" }
+        return "🛒"
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Category emoji
+            Text(categoryEmoji)
+                .font(.system(size: 28))
+                .frame(width: 40)
+
+            // Name and brand
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
                     .font(.headline)
+                    .lineLimit(1)
                 if let brand = item.brand, !brand.isEmpty {
                     Text(brand)
                         .font(.caption)
@@ -222,24 +257,35 @@ struct FoodItemRow: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(item.urgency.label)
-                    .font(.caption)
-                    .bold()
-                    .foregroundColor(urgencyColor)
-                if item.isExpired {
-                    Text("Expired")
-                        .font(.caption2)
-                        .foregroundColor(.red)
-                } else {
-                    Text("\(item.daysUntilExpiry)d left")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+            // Expiry badge
+            Text(badgeText)
+                .font(.caption)
+                .bold()
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(urgencyColor.opacity(0.15))
+                .foregroundColor(urgencyColor)
+                .cornerRadius(20)
+        }
+        .padding(.vertical, 6)
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                withAnimation {
+                    modelContext.delete(item)
                 }
+            } label: {
+                Label("Eaten!", systemImage: "fork.knife")
+            }
+            .tint(.green)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                withAnimation {
+                    modelContext.delete(item)
+                }
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
-        .padding(.vertical, 4)
     }
 }
-
-
