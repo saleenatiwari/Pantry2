@@ -1,9 +1,3 @@
-//
-//  ScannerView.swift
-//  Pantry
-//
-//  Created by Saleena Tiwari on 12.03.26.
-//
 import SwiftUI
 import AVFoundation
 
@@ -48,20 +42,19 @@ struct BarcodeScannerRepresentable: UIViewRepresentable {
 
         return view
     }
-    
 
     func updateUIView(_ uiView: UIView, context: Context) {
         DispatchQueue.main.async {
             context.coordinator.preview?.frame = uiView.bounds
         }
     }
-    
-    // MARK: - Coordinator (handles barcode detection)
+
+    // MARK: - Coordinator
     class Coordinator: NSObject, AVCaptureMetadataOutputObjectsDelegate {
         var onBarcodeFound: (String) -> Void
         var session: AVCaptureSession?
-        var lastScanned: String = ""
         var preview: AVCaptureVideoPreviewLayer?
+        var lastScanned: String = ""
 
         init(onBarcodeFound: @escaping (String) -> Void) {
             self.onBarcodeFound = onBarcodeFound
@@ -75,10 +68,8 @@ struct BarcodeScannerRepresentable: UIViewRepresentable {
                   barcode != lastScanned else { return }
 
             lastScanned = barcode
-            print("✅ Barcode scanned: \(barcode)")
             onBarcodeFound(barcode)
 
-            // Pause scanning briefly to avoid duplicates
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 self.lastScanned = ""
             }
@@ -86,44 +77,85 @@ struct BarcodeScannerRepresentable: UIViewRepresentable {
     }
 }
 
-// MARK: - SwiftUI Scanner View
+// MARK: - Scanner View
 struct ScannerView: View {
     @State private var scannedBarcode: String = ""
-    @State private var isScanning: Bool = true
+    @State private var scannedProduct: FoodItem? = nil
+    @State private var isLoading: Bool = false
+    @State private var errorMessage: String? = nil
 
     var body: some View {
         ZStack {
             // Camera feed
             BarcodeScannerRepresentable { barcode in
-                self.scannedBarcode = barcode
-                print("📦 Found barcode: \(barcode)")
+                guard barcode != scannedBarcode else { return }
+                scannedBarcode = barcode
+                Task {
+                    await lookupProduct(barcode: barcode)
+                }
             }
             .ignoresSafeArea()
 
-            // Overlay UI
+            // Viewfinder box
             VStack {
                 Spacer()
-
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(Color.white, lineWidth: 2)
                     .frame(width: 250, height: 150)
+                Spacer()
+            }
 
+            // Bottom overlay
+            VStack {
                 Spacer()
 
-                if !scannedBarcode.isEmpty {
+                if isLoading {
                     VStack(spacing: 8) {
-                        Text("Barcode detected!")
-                            .font(.headline)
+                        ProgressView()
+                            .tint(.white)
+                        Text("Looking up product...")
                             .foregroundColor(.white)
-                        Text(scannedBarcode)
-                            .font(.title2)
-                            .bold()
-                            .foregroundColor(.green)
                     }
                     .padding()
                     .background(Color.black.opacity(0.7))
                     .cornerRadius(12)
                     .padding(.bottom, 40)
+
+                } else if let product = scannedProduct {
+                    VStack(spacing: 6) {
+                        Text("✅ Product Found!")
+                            .font(.headline)
+                            .foregroundColor(.green)
+                        Text(product.name)
+                            .font(.title3)
+                            .bold()
+                            .foregroundColor(.white)
+                        if !product.brand.isEmpty {
+                            Text(product.brand)
+                                .foregroundColor(.gray)
+                        }
+                        Text("Barcode: \(scannedBarcode)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(12)
+                    .padding(.bottom, 40)
+
+                } else if let error = errorMessage {
+                    VStack(spacing: 8) {
+                        Text("❌ \(error)")
+                            .foregroundColor(.red)
+                        Text("Barcode: \(scannedBarcode)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(12)
+                    .padding(.bottom, 40)
+
                 } else {
                     Text("Point camera at a barcode")
                         .foregroundColor(.white)
@@ -134,5 +166,30 @@ struct ScannerView: View {
                 }
             }
         }
+    }
+
+    // MARK: - API Lookup
+    func lookupProduct(barcode: String) async {
+        isLoading = true
+        errorMessage = nil
+        scannedProduct = nil
+
+        do {
+            let product = try await FoodAPIService.shared.fetchProduct(barcode: barcode)
+            if let product = product {
+                scannedProduct = product
+                print("✅ Product found: \(product.name) by \(product.brand)")
+                print("   Calories: \(product.calories ?? 0) kcal")
+                print("   Nutriscore: \(product.nutriscoreGrade ?? "N/A")")
+            } else {
+                errorMessage = "Product not found in database"
+                print("⚠️ Barcode \(barcode) not found in Open Food Facts")
+            }
+        } catch {
+            errorMessage = "Network error — try again"
+            print("❌ Error: \(error)")
+        }
+
+        isLoading = false
     }
 }
