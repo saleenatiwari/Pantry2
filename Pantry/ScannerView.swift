@@ -179,8 +179,10 @@ struct ScannerView: View {
             if let product = product {
                 scannedProduct = product
                 print("✅ Product found: \(product.name) by \(product.brand)")
-                print("   Calories: \(product.calories ?? 0) kcal")
-                print("   Nutriscore: \(product.nutriscoreGrade ?? "N/A")")
+                
+                // TEMPORARY TEST — remove after confirming it works
+                /**let days = try await GeminiService.shared.estimateDaysUntilExpiry(productName: product.name)
+                print("📅 Expiry estimate: \(days) days from today")**/
             } else {
                 errorMessage = "Product not found in database"
                 print("⚠️ Barcode \(barcode) not found in Open Food Facts")
