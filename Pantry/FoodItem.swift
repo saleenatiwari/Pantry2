@@ -68,6 +68,15 @@ enum StorageSection: String, Codable, CaseIterable {
     case freezer = "Freezer"
     case pantry = "Pantry"
     case other = "Other"
+    
+    var displayName: String {
+        switch self {
+        case .fridge: return "Fridge"
+        case .freezer: return "Shelf"
+        case .pantry: return "Pantry"
+        case .other: return "Basement"
+        }
+    }
 }
 
 // MARK: - Expiry Urgency

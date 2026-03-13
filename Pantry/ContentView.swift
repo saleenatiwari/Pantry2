@@ -23,18 +23,6 @@ struct ContentView: View {
 
 // MARK: - Placeholder Views
 
-struct InventoryView: View {
-    var body: some View {
-        VStack {
-            Text("🥦 Inventory")
-                .font(.largeTitle)
-                .bold()
-            Text("Your pantry items will live here")
-                .foregroundColor(.gray)
-        }
-    }
-}
-
 struct ChefView: View {
     var body: some View {
         VStack {
