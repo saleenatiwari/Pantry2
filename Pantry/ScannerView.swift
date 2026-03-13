@@ -83,6 +83,8 @@ struct ScannerView: View {
     @State private var scannedProduct: ScannedFood? = nil
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
+    @State private var showingAddSheet: Bool = false
+    @State private var geminiDaysOffset: Int = 7
 
     var body: some View {
         ZStack {
@@ -137,11 +139,30 @@ struct ScannerView: View {
                         Text("Barcode: \(scannedBarcode)")
                             .font(.caption)
                             .foregroundColor(.gray)
+                        
+                        Button {
+                                    showingAddSheet = true
+                                } label: {
+                                    Text("Add to Pantry")
+                                        .font(.headline)
+                                        .foregroundColor(.black)
+                                        .padding(.horizontal, 24)
+                                        .padding(.vertical, 10)
+                                        .background(Color.green)
+                                        .cornerRadius(10)
+                                }
+                                .padding(.top, 6)
+                        
                     }
                     .padding()
                     .background(Color.black.opacity(0.7))
                     .cornerRadius(12)
                     .padding(.bottom, 40)
+                    .sheet(isPresented: $showingAddSheet) {
+                        if let product = scannedProduct {
+                            AddToInventorySheet(product: product, daysOffset: geminiDaysOffset)
+                        }
+                    }
 
                 } else if let error = errorMessage {
                     VStack(spacing: 8) {
@@ -176,14 +197,15 @@ struct ScannerView: View {
 
         do {
             let product = try await FoodAPIService.shared.fetchProduct(barcode: barcode)
-            if let product = product {
-                scannedProduct = product
-                print("✅ Product found: \(product.name) by \(product.brand)")
                 
-                // TEMPORARY TEST — remove after confirming it works
-                /**let days = try await GeminiService.shared.estimateDaysUntilExpiry(productName: product.name)
-                print("📅 Expiry estimate: \(days) days from today")**/
-            } else {
+                if let product = product {
+                    scannedProduct = product
+                    print("✅ Product found: \(product.name) by \(product.brand)")
+                    
+                    let days = try await GeminiService.shared.estimateDaysUntilExpiry(productName: product.name)
+                    geminiDaysOffset = days
+                    print("📅 Expiry estimate: \(days) days from today")
+                } else {
                 errorMessage = "Product not found in database"
                 print("⚠️ Barcode \(barcode) not found in Open Food Facts")
             }
