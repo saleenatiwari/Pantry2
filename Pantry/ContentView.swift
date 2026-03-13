@@ -1,24 +1,48 @@
-//
-//  ContentView.swift
-//  Pantry
-//
-//  Created by Saleena Tiwari on 12.03.26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            InventoryView()
+                .tabItem {
+                    Label("Inventory", systemImage: "list.bullet")
+                }
+            
+            ScannerView()
+                .tabItem {
+                    Label("Scanner", systemImage: "barcode.viewfinder")
+                }
+            
+            ChefView()
+                .tabItem {
+                    Label("Chef", systemImage: "fork.knife")
+                }
         }
-        .padding()
     }
 }
 
-#Preview {
-    ContentView()
+// MARK: - Placeholder Views
+
+struct InventoryView: View {
+    var body: some View {
+        VStack {
+            Text("🥦 Inventory")
+                .font(.largeTitle)
+                .bold()
+            Text("Your pantry items will live here")
+                .foregroundColor(.gray)
+        }
+    }
+}
+
+struct ChefView: View {
+    var body: some View {
+        VStack {
+            Text("👨‍🍳 Chef")
+                .font(.largeTitle)
+                .bold()
+            Text("AI recipe coming soooooon :)")
+                .foregroundColor(.gray)
+        }
+    }
 }
