@@ -80,7 +80,7 @@ struct BarcodeScannerRepresentable: UIViewRepresentable {
 // MARK: - Scanner View
 struct ScannerView: View {
     @State private var scannedBarcode: String = ""
-    @State private var scannedProduct: FoodItem? = nil
+    @State private var scannedProduct: ScannedFood? = nil
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
 
@@ -130,7 +130,7 @@ struct ScannerView: View {
                             .font(.title3)
                             .bold()
                             .foregroundColor(.white)
-                        if !product.brand.isEmpty {
+                        if !(product.brand.isEmpty) {
                             Text(product.brand)
                                 .foregroundColor(.gray)
                         }

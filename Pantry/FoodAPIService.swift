@@ -54,7 +54,7 @@ struct OFFNutriments: Codable {
 
 // MARK: - Clean app-facing model
 
-struct FoodItem: Identifiable {
+struct ScannedFood: Identifiable {
     let id = UUID()
     let barcode: String
     let name: String
@@ -75,7 +75,7 @@ struct FoodItem: Identifiable {
 class FoodAPIService {
     static let shared = FoodAPIService()
 
-    func fetchProduct(barcode: String) async throws -> FoodItem? {
+    func fetchProduct(barcode: String) async throws -> ScannedFood? {
         let urlString = "https://world.openfoodfacts.org/api/v0/product/\(barcode).json"
 
         guard let url = URL(string: urlString) else {
@@ -90,7 +90,7 @@ class FoodAPIService {
             return nil
         }
 
-        return FoodItem(
+        return ScannedFood(
             barcode: barcode,
             name: product.productName ?? "Unknown Product",
             brand: product.brands ?? "",
